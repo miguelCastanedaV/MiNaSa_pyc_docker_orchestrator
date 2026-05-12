@@ -1,0 +1,26 @@
+http:
+  routers:
+    dashboard:
+      rule: "Host(`dashboard-uat.pideYcuenta.com`)"
+      entryPoints:
+        - websecure
+      service: dashboard_svc
+
+  services:
+    dashboard_svc:
+      loadBalancer:
+        servers:
+          - url: "http://dashboard:80"
+
+tls:
+  certificates:
+    - certFile: /etc/traefik/certs/pideYcuenta.com+1.pem
+      keyFile: /etc/traefik/certs/pideYcuenta.com+1-key.pem
+      stores:
+        - default
+
+  stores:
+    default:
+      defaultCertificate:
+        certFile: /etc/traefik/certs/pideYcuenta.com+1.pem
+        keyFile: /etc/traefik/certs/pideYcuenta.com+1-key.pem

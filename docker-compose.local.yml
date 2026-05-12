@@ -1,0 +1,59 @@
+include:
+  - docker-compose.uat.yml
+
+services:
+  traefik:
+    networks:
+      traefik-proxy:
+        aliases:
+          - dashboard.pideYcuenta.local
+          - mailpit.pideYcuenta.local
+          - pideYcuenta.local
+  mailpit:
+    image: axllent/mailpit:v1.19
+    container_name: ${COMPOSE_PROJECT_NAME}-mailpit
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8025/" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: "true"
+      MP_SMTP_AUTH_ALLOW_INSECURE: "true"
+      MP_DATA_FILE: /data/mailpit.db
+      MP_SMTP_TLS_REQUIRED: "false"
+    volumes:
+      - mailpit_data:/data
+    networks:
+      - pide-y-cuenta-network
+      - traefik-proxy
+
+  # Dashboard
+  dashboard:
+    build:
+      target: local-web
+      context: ${DASHBOARD_PATH}
+      dockerfile: Dockerfile
+      args:
+        user: dash_${USER_NAME:-developer}
+        uid: ${USER_UID:-1000}
+    volumes:
+      - ${DASHBOARD_PATH}:/var/www/html
+      - ${COMPOSER_AUTH_PATH}:/var/www/html/auth.json
+      - ./common/entrypoint/init_00_update_certificates.sh:/home/dash_${USER_NAME}/docker-entrypoint/init_00_update_certificates.sh
+      - ./common/entrypoint/init_02_copy_environment_file.sh:/home/dash_${USER_NAME}/docker-entrypoint/init_02_copy_environment_file.sh
+      - ./traefik/certs:/etc/ssl/certs/traefik:ro
+    environment:
+      - FIRST_SERVICE_BOOT=${FIRST_SERVICE_BOOT:-no}
+
+  dashboard_worker:
+    extends:
+      service: dashboard
+    build:
+      target: local-worker
+
+volumes:
+  mailpit_data:
+    name: ${COMPOSE_PROJECT_NAME}-mailpit-data

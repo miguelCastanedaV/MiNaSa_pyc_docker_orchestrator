@@ -1,0 +1,132 @@
+services:
+  mysql:
+    image: mysql:8
+    container_name: ${COMPOSE_PROJECT_NAME}-mysql
+    restart: always
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-u${DB_USERNAME}", "-p${DB_PASSWORD}" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    ports:
+      - ${DB_PORT:-3306}:3306
+    env_file:
+      - common/env_vars/generated/${APP_ENV:-production}.mysql.env
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./mysql/docker-entrypoint-initdb.d/:/docker-entrypoint-initdb.d/
+      - ./mysql/mysql-config:/etc/mysql/conf.d
+    networks:
+      - pide-y-cuenta-network
+  redis:
+    container_name: ${COMPOSE_PROJECT_NAME}-redis
+    build:
+      context: ./redis
+    restart: always
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    privileged: true
+    command: sh -c "/entrypoint.sh"
+    ports:
+      - ${REDIS_PORT}:6379
+    volumes:
+      - redis_data:/data
+    networks:
+      - pide-y-cuenta-network
+  traefik:
+    image: traefik:v3.6.4
+    container_name: ${COMPOSE_PROJECT_NAME}-traefik
+    restart: unless-stopped
+    command:
+      - "--api.dashboard=true"
+      - "--api.insecure=true"
+      - "--log.level=DEBUG"
+      - "--log.format=json"
+      # EntryPoints
+      - "--entrypoints.web.address=:${APP_PORT:-80}"
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+      - "--entrypoints.web.http.redirections.entryPoint.permanent=true"
+      - "--entrypoints.websecure.address=:${APP_PORT_SSL:-443}"
+      - "--entrypoints.websecure.http.tls=true"
+      # Providers
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.network=traefik-proxy"
+      - "--providers.file.filename=/etc/traefik/traefik_dynamic.yml"
+      - "--providers.file.watch=true"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik/traefik_dynamic.${APP_ENV}.yml:/etc/traefik/traefik_dynamic.yml:ro
+      - ./traefik/certs:/etc/traefik/certs:ro
+    ports:
+      - ${APP_PORT:-80}:80
+      - ${APP_PORT_SSL:-443}:${APP_PORT_SSL:-443}
+      - ${TRAEFIK_PORT:-8080}:8080
+    networks:
+      traefik-proxy:
+        aliases:
+          - dashboard.pideYcuenta.com
+          - pideYcuenta.com
+
+  # Dashboard
+  dashboard:
+    image: ${REGISTRY_URL}/${REGISTRY_NAMESPACE}/dashboard-web:${DASHBOARD_VERSION:-latest}
+    container_name: ${COMPOSE_PROJECT_NAME}-dashboard
+    restart: unless-stopped
+    volumes:
+      - ${DASHBOARD_STORAGE_PATH:-dashboard_storage}:/var/www/html/storage
+      - ./common/env_vars/generated/${APP_ENV:-production}.dashboard.env:/tmp/dashboard.env:ro
+      # Services configuration files
+      - ./dashboard/php.web.ini:/usr/local/etc/php/php.ini
+      - ./dashboard/apache.conf:/etc/apache2/sites-available/000-default.conf
+      - ./traefik/certs:/etc/ssl/certs/traefik:ro
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - pide-y-cuenta-network
+      - traefik-proxy
+
+  dashboard_worker:
+    image: ${REGISTRY_URL}/${REGISTRY_NAMESPACE}/dashboard-worker:${DASHBOARD_VERSION:-latest}
+    container_name: ${COMPOSE_PROJECT_NAME}-dashboard-worker
+    restart: unless-stopped
+    volumes:
+      - ${DASHBOARD_STORAGE_PATH:-dashboard_storage}:/var/www/html/storage
+      - ./common/env_vars/generated/${APP_ENV:-production}.dashboard.env:/tmp/dashboard.env:ro
+      # Services configuration files
+      - ./dashboard/php.cli.ini:/usr/local/etc/php/php.ini
+      - ./dashboard/supervisord.conf:/etc/supervisord.conf
+    depends_on:
+      - dashboard
+    environment:
+      - APP_ENV=worker
+    networks:
+      - pide-y-cuenta-network
+      - traefik-proxy
+
+volumes:
+  mysql_data:
+    name: ${COMPOSE_PROJECT_NAME}-mysql-data
+  redis_data:
+    name: ${COMPOSE_PROJECT_NAME}-redis-data
+  dashboard_storage:
+    name: ${COMPOSE_PROJECT_NAME}-dashboard-storage
+
+networks:
+  pide-y-cuenta-network:
+    name: ${COMPOSE_PROJECT_NAME}-network
+    driver: bridge
+  traefik-proxy:
+    name: ${COMPOSE_PROJECT_NAME}-traefik-proxy
+    driver: bridge
+    attachable: true
+    ipam:
+      config:
+        - subnet: ${DOCKER_SUBNET:-175.22.0.0/16}

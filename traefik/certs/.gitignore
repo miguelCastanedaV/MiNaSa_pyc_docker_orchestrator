@@ -1,0 +1,5 @@
+*
+!.gitignore
+!san.cnf
+!create_certs*.sh
+!generate_mkcert.sh

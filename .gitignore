@@ -1,0 +1,9 @@
+.env
+.env.*
+!.env.example
+*.log
+!deployed-versions.log
+mysql/lib/*
+mailpit/data/*
+!mysql/lib/.gitignore
+.idea/

@@ -1,0 +1,74 @@
+http:
+  routers:
+    dashboard:
+      rule: "Host(`dashboard.pideYcuenta.local`)"
+      entryPoints:
+        - websecure
+      service: dashboard_svc
+      middlewares:
+        - headers-secure
+        # - compress # Pendiente ver falla menor
+      tls: { }
+    dashboard_worker:
+      rule: "Host(`dashboard-worker.pideYcuenta.local`)"
+      entryPoints:
+        - websecure
+      service: dashboard_worker_svc
+      middlewares:
+        - headers-secure
+        # - compress # Pendiente ver falla menor
+      tls: { }
+
+    mailpit:
+      rule: "Host(`mailpit.pideYcuenta.local`)"
+      entryPoints:
+        - websecure
+      service: mailpit_svc
+      middlewares:
+        - headers-secure
+      tls: { }
+
+  services:
+    dashboard_svc:
+      loadBalancer:
+        servers:
+          - url: "http://dashboard:80"
+    dashboard_worker_svc:
+      loadBalancer:
+        servers:
+          - url: "http://dashboard_worker:9001"
+
+    mailpit_svc:
+      loadBalancer:
+        servers:
+          - url: "http://mailpit:8025"
+
+  middlewares:
+    headers-secure:
+      headers:
+        customRequestHeaders:
+          X-Forwarded-Proto: "https"
+        sslRedirect: true
+        stsSeconds: 31536000
+    compress:
+      compress:
+        encodings:
+          - "gzip"
+          - "br"
+          - "zstd"
+        excludedContentTypes:
+          - "text/event-stream"
+          - "application/octet-stream"
+
+tls:
+  certificates:
+    - certFile: /etc/traefik/certs/pideYcuenta.local+1.pem
+      keyFile: /etc/traefik/certs/pideYcuenta.local+1-key.pem
+      stores:
+        - default
+
+  stores:
+    default:
+      defaultCertificate:
+        certFile: /etc/traefik/certs/pideYcuenta.local+1.pem
+        keyFile: /etc/traefik/certs/pideYcuenta.local+1-key.pem
