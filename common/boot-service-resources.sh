@@ -350,19 +350,19 @@ build_dashboard_images() {
 
         case "$stage" in
             production-web)
-                base_image_name="dashboard-web"
+                base_image_name="pyc-dashboard-web"
                 build_args="$build_args"
                 image_tag="${app_version}"
                 additional_tags=("latest")
                 ;;
             production-worker)
-                base_image_name="dashboard-worker"
+                base_image_name="pyc-dashboard-worker"
                 build_args="$build_args"
                 image_tag="${app_version}"
                 additional_tags=("latest")
                 ;;
             ci)
-                base_image_name="dashboard-ci"
+                base_image_name="pyc-dashboard-ci"
                 build_args="$build_args --build-arg user=ci_user"
                 image_tag="${app_version}"
                 additional_tags=("latest")
