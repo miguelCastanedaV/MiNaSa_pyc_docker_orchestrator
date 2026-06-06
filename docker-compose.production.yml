@@ -74,7 +74,7 @@ services:
 
   # Dashboard
   dashboard:
-    image: ${REGISTRY_URL}/${REGISTRY_NAMESPACE}/dashboard-web:${DASHBOARD_VERSION:-latest}
+    image: ${REGISTRY_URL}/${REGISTRY_NAMESPACE}/pyc-dashboard-web:${DASHBOARD_VERSION:-latest}
     container_name: ${COMPOSE_PROJECT_NAME}-dashboard
     restart: unless-stopped
     volumes:
@@ -94,7 +94,7 @@ services:
       - traefik-proxy
 
   dashboard_worker:
-    image: ${REGISTRY_URL}/${REGISTRY_NAMESPACE}/dashboard-worker:${DASHBOARD_VERSION:-latest}
+    image: ${REGISTRY_URL}/${REGISTRY_NAMESPACE}/pyc-dashboard-worker:${DASHBOARD_VERSION:-latest}
     container_name: ${COMPOSE_PROJECT_NAME}-dashboard-worker
     restart: unless-stopped
     volumes:

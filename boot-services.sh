@@ -122,8 +122,8 @@ case $option in
             run_validations_pre_build
             echo "Recreating all services..."
 
-            rm -rf "${PHVA_PATH}/vendor" "${PHVA_PATH}/node_modules"
-            rm -f "${PHVA_PATH}/.env" "${PHVA_PATH}/.env.worker" "${PHVA_PATH}/.env.testing"
+            rm -rf "${DASHBOARD_PATH}/vendor" "${DASHBOARD_PATH}/node_modules"
+            rm -f "${DASHBOARD_PATH}/.env" "${DASHBOARD_PATH}/.env.worker" "${DASHBOARD_PATH}/.env.testing"
 
             docker_compose down --rmi all -v --remove-orphans -t 1
             FIRST_SERVICE_BOOT=yes docker_compose up --build -d
@@ -246,9 +246,9 @@ case $option in
     ;;
     14)
         echo -e "\nRealizar rollback de un servicio"
-        read -p "Nombre del servicio (phva, public-web): " service
+        read -p "Nombre del servicio (pyc-dashboard, public-web): " service
         read -p "Versión objetivo (ej. v1.2.2): " target_version
-        read -p "Número de migraciones a revertir (solo phva, default 0): " steps
+        read -p "Número de migraciones a revertir (solo pyc-dashboard, default 0): " steps
         steps=${steps:-0}
         rollback_service_noninteractive "$service" "$target_version" "$steps"
     ;;

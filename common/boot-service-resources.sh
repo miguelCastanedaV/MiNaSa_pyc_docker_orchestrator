@@ -433,7 +433,7 @@ update_service_noninteractive() {
     local service="$1"
     local with_migrate="$2"  # "true" o "false"
 
-    if [[ "$service" == "phva" ]] && [[ "$with_migrate" == "true" ]]; then
+    if [[ "$service" == "dashboard" ]] && [[ "$with_migrate" == "true" ]]; then
         echo "📦 Ejecutando migraciones con la nueva imagen..."
         docker_compose pull "$service"
         docker_compose run --rm --entrypoint php "$service" artisan migrate --force
@@ -469,7 +469,7 @@ update_service_interactive() {
         break
     done
 
-    if [[ "$service" == "phva" ]]; then
+    if [[ "$service" == "dashboard" ]]; then
         echo -n "¿Ejecutar migraciones antes de actualizar? (y/n): "
         read -r run_migrations
         migrate_flag=false
@@ -530,8 +530,8 @@ rollback_service_noninteractive() {
     # Construir nombre de imagen según el servicio
     local image_name
     case "$service" in
-        phva|phva_worker)
-            image_name="${REGISTRY}/${NAMESPACE}/gs-phva-web:${target_version}"
+        dashboard|dashboard_worker)
+            image_name="${REGISTRY}/${NAMESPACE}/pyc-dashboard-web:${target_version}"
             ;;
         public-web)
             image_name="${REGISTRY}/${NAMESPACE}/public-web:${target_version}"
@@ -547,8 +547,8 @@ rollback_service_noninteractive() {
         return 1
     fi
 
-    # --- Revertir migraciones si es phva y steps > 0 ---
-    if [[ "$service" == "phva" ]] && [ "$steps" -gt 0 ]; then
+    # --- Revertir migraciones si es dashboard y steps > 0 ---
+    if [[ "$service" == "dashboard" ]] && [ "$steps" -gt 0 ]; then
         echo "📦 Revirtiendo $steps migraciones..."
         docker_compose run --rm --entrypoint php "$service" artisan migrate:rollback --step="$steps"
         if [ $? -ne 0 ]; then

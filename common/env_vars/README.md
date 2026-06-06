@@ -6,7 +6,7 @@ Características
 * **Archivo central único**: todas las variables (base y específicas por servicio) se definen en un solo lugar (ej. `project.env-vars`).
 * **Sección BASE**: variables comunes que se exportan y pueden ser referenciadas por otras variables mediante `${VAR}`.
 * **Soporte para múltiples archivos de entorno**: puedes pasar uno o más archivos .env (como los que usa docker-compose) para que sus variables estén disponibles en el contenedor.
-* **Prefijos automáticos**: cada archivo de salida tiene un prefijo derivado de su nombre (ej. `phva.env` → `PHVA_`). Solo las variables con ese prefijo se aplican a dicho archivo.
+* **Prefijos automáticos**: cada archivo de salida tiene un prefijo derivado de su nombre (ej. `dashboard.env` → `DASHBOARD_`). Solo las variables con ese prefijo se aplican a dicho archivo.
 * **Expansión de variables**: usa envsubst para expandir referencias como `${BASE_URL}` dentro de los valores.
 * **Preserva formato**: mantiene comentarios, líneas vacías y el orden original de las plantillas.
 * **Variables nuevas**: si una variable con prefijo no existe en la plantilla, se añade al final del archivo con un comentario indicando su origen.
@@ -60,7 +60,7 @@ PREFIJO_NOMBRE_VARIABLE=valor
 ```
 
 Donde **PREFIJO** debe coincidir con el nombre del archivo de salida (en mayúsculas, reemplazando caracteres no alfanuméricos por `_`). Por ejemplo:
-* Para `phva.env` → prefijo `PHVA_`
+* Para `dashboard.env` → prefijo `DASBOARD_`
 * Para `mysql-config.cnf` → prefijo `MYSQL_CONFIG_CNF_` (aunque recomendamos usar nombres simples como mysql.env para evitar prefijos largos)
 
 **Importante**: El valor puede contener referencias a variables base usando ${NOMBRE_VARIABLE_BASE}. Estas referencias se expandirán automáticamente.
@@ -77,10 +77,10 @@ DB_PASSWORD=toor
 TZ=UTC
 ############################################# END BASE VARIABLES #######################################################
 
-# Variables para el servicio PHVA (archivo phva.env)
-PHVA_APP_URL=${BASE_URL}:${APP_PORT_SSL}
-PHVA_TIMEZONE=${TZ}
-PHVA_VARIABLE_NUEVA="valor nuevo"   # Se añadirá al final de phva.env
+# Variables para el servicio DASHBOARD (archivo dashboard.env)
+DASHBOARD_APP_URL=${BASE_URL}:${APP_PORT_SSL}
+DASHBOARD_TIMEZONE=${TZ}
+DASHBOARD_VARIABLE_NUEVA="valor nuevo"   # Se añadirá al final de dashboard.env
 
 # Variables para MySQL (archivo mysql-config.cnf)
 MYSQL_HOST=${DB_HOST}
@@ -98,11 +98,11 @@ TRAEFIK_INSECURE=true
 ```
 
 # Formato de las plantillas
-Las plantillas son archivos con extensión `.example` (ej. `phva.env.example`) que contienen la estructura base del archivo de configuración. Pueden incluir comentarios, líneas vacías y asignaciones del tipo `CLAVE=valor`.
+Las plantillas son archivos con extensión `.example` (ej. `dashboard.env.example`) que contienen la estructura base del archivo de configuración. Pueden incluir comentarios, líneas vacías y asignaciones del tipo `CLAVE=valor`.
 
 **Importante**: Las claves en la plantilla no llevan prefijo. El generador las reemplazará si existe una variable con el prefijo correspondiente en el archivo central.
 
-Ejemplo de `templates/phva.env.example`:
+Ejemplo de `templates/dashboard.env.example`:
 
 ```bash
 APP_NAME=Laravel
@@ -112,7 +112,7 @@ APP_URL=http://localhost
 
 DB_HOST=127.0.0.1
 DB_PORT=3306
-DB_DATABASE=phva
+DB_DATABASE=pyc_dashboard
 DB_USERNAME=root
 DB_PASSWORD=
 
@@ -149,7 +149,7 @@ El script:
 
 ## Salida
 En el directorio de salida (./generated) aparecerán los archivos generados, por ejemplo:
-* `phva.env`
+* `dashboard.env`
 * `mysql-config.cnf`
 * `redis.conf`
 * `traefik_dynamic.yml`
@@ -166,9 +166,9 @@ DB_PASSWORD=SeCrEtO
 TZ=America/Santiago
 ############################################# END BASE VARIABLES #######################################################
 
-PHVA_APP_URL=${BASE_URL}:${APP_PORT_SSL}
-PHVA_TIMEZONE=${TZ}
-PHVA_CUSTOM_VAR="Hola mundo"
+DASHBOARD_APP_URL=${BASE_URL}:${APP_PORT_SSL}
+DASHBOARD_TIMEZONE=${TZ}
+DASHBOARD_CUSTOM_VAR="Hola mundo"
 
 MYSQL_PORT=3307
 MYSQL_USER=${DB_USERNAME}
@@ -186,7 +186,7 @@ DB_PORT=3313
 REDIS_PORT=6383
 ```
 
-### Plantilla `templates/phva.env.example`
+### Plantilla `templates/dashboard.env.example`
 ```bash
 APP_NAME=MiApp
 APP_ENV=local
@@ -205,7 +205,7 @@ DB_PASSWORD=
   ./run-config-generator.sh ./vars/project.env-vars ./generated ./templates ../.env
 ```
 
-### Archivo generado `generated/phva.env`
+### Archivo generado `generated/dashboard.env`
 ```bash
 APP_NAME=MiApp
 APP_ENV=local
@@ -222,16 +222,16 @@ DB_PASSWORD=
 CUSTOM_VAR=Hola mundo
 TIMEZONE=America/Santiago
 ```
-Observa que `DB_PORT` no se modificó porque no hay `PHVA_DB_PORT` en el archivo central; el valor de la plantilla se mantiene.
+Observa que `DB_PORT` no se modificó porque no hay `DASHBOARD_DB_PORT` en el archivo central; el valor de la plantilla se mantiene.
 
 ### Notas adicionales
-* **Prefijos automáticos**: El script deriva el prefijo del nombre del archivo de salida (sin la extensión `.example`). Por ejemplo, `phva.env` → `PHVA_`. Si usas nombres con guiones, estos se convierten en guiones bajos (`mi-servicio.env` → `MI_SERVICIO_`).
+* **Prefijos automáticos**: El script deriva el prefijo del nombre del archivo de salida (sin la extensión `.example`). Por ejemplo, `dashboard.env` → `DASHBOARD_`. Si usas nombres con guiones, estos se convierten en guiones bajos (`mi-servicio.env` → `MI_SERVICIO_`).
 * **Variables base**: No se escriben en los archivos finales a menos que un servicio las declare con su prefijo. Solo sirven para expandir referencias.
 * **Múltiples archivos de entorno**: Los archivos `--env-file` se cargan en el orden proporcionado. Si una variable aparece en varios, el último valor prevalece. Las variables de la sección BASE del archivo central tienen prioridad sobre todos ellos.
 * **Permisos**: El script `run-config-generator.sh` pasa el UID y GID del usuario actual al contenedor, y `generate.sh` ejecuta `chown` para que los archivos generados pertenezcan a ese usuario. Así puedes editarlos/borrarlos sin necesidad de `sudo`.
 * **Errores comunes**:
   * Asegúrate de que el archivo central tenga los marcadores exactos (con el mismo número de `#`).
-  * Verifica que los prefijos coincidan: `PHVA_` para `phva.env`, `MYSQL_` para `mysql-config.cnf`, etc.
+  * Verifica que los prefijos coincidan: `DASHBOARD_` para `dashboard.env`, `MYSQL_` para `mysql-config.cnf`, etc.
   * Si una variable no se reemplaza, revisa que la clave en la plantilla sea idéntica a la clave sin prefijo.
 
 ### Personalización
