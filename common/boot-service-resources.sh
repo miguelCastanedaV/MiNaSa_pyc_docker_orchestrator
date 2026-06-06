@@ -9,6 +9,7 @@ BOLD='\033[1m'
 
 # Variable global para el archivo de entorno seleccionado
 SELECTED_ENV_FILE=""
+SELECTED_ENV_VERSION_FILE=""
 
 # Mapeo de servicios a variables de entorno en versions.{env}.env
 declare -A SERVICE_VERSION_VAR=(
@@ -95,6 +96,9 @@ select_and_load_env() {
     if [[ "$ENV_NAME" != "local" ]] && [[ -f "versions.${ENV_NAME}.env" ]]; then
         local versions_file="versions.${ENV_NAME}.env"
         if [[ -f "$versions_file" ]]; then
+            SELECTED_ENV_VERSION_FILE="$versions_file"
+            export SELECTED_ENV_VERSION_FILE
+
             echo "✅ Cargando $versions_file"
             set -a
             source "$versions_file"
@@ -303,7 +307,8 @@ run_config_generator() {
         "./common/env_vars/project.env-vars" \
         "./common/env_vars/generated" \
         "./common/env_vars/templates" \
-        "$SELECTED_ENV_FILE"
+        "$SELECTED_ENV_FILE" \
+        ${SELECTED_ENV_VERSION_FILE:+$SELECTED_ENV_VERSION_FILE}
 
     if [ $? -ne 0 ]; then
         echo "❌ Config generator failed"
