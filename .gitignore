@@ -7,3 +7,4 @@ mysql/lib/*
 mailpit/data/*
 !mysql/lib/.gitignore
 .idea/
+traefik/acme.json

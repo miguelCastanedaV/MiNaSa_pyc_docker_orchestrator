@@ -3,6 +3,8 @@ include:
 
 services:
   traefik:
+    volumes:
+      - ./traefik/certs:/etc/traefik/certs:ro
     networks:
       traefik-proxy:
         aliases:

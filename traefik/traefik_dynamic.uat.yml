@@ -5,22 +5,11 @@ http:
       entryPoints:
         - websecure
       service: dashboard_svc
+      tls:
+        certResolver: cloudflare
 
   services:
     dashboard_svc:
       loadBalancer:
         servers:
           - url: "http://dashboard:80"
-
-tls:
-  certificates:
-    - certFile: /etc/traefik/certs/pideYcuenta.com+1.pem
-      keyFile: /etc/traefik/certs/pideYcuenta.com+1-key.pem
-      stores:
-        - default
-
-  stores:
-    default:
-      defaultCertificate:
-        certFile: /etc/traefik/certs/pideYcuenta.com+1.pem
-        keyFile: /etc/traefik/certs/pideYcuenta.com+1-key.pem
