@@ -10,8 +10,8 @@ echo -e "${YELLOW}🔄 Actualizando /etc/hosts con dominio del Docker Registry..
 
 # Configuración
 HOSTS_FILE="/etc/hosts"
-MARKER_START="# GESTIONASIG REGISTRY START"
-MARKER_END="# GESTIONASIG REGISTRY END"
+MARKER_START="# MINASA REGISTRY START"
+MARKER_END="# MINASA REGISTRY END"
 
 # Configuración del registro - EDITAR SEGÚN TUS NECESIDADES
 # ========================================================
