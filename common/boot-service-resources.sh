@@ -349,7 +349,7 @@ build_dashboard_images() {
 
     for stage in "${stages[@]}"; do
         local base_image_name=""
-        local build_args="--build-arg uid=${uid} --build-arg RELEASE_TAG=${app_version}"
+        local build_args="--build-arg uid=${uid} --build-arg RELEASE_TAG=${app_version} --build-arg registry_url=${registry_url}"
         local image_tag=""
         local additional_tags=()
 
